@@ -1,16 +1,3 @@
-"""
-pygnssutils - rtk_example_auto.py
-
-Adaptation of rtk_example which 'auto-detects' the closest mountpoint.
-
-Created on 27 Aug 2023
-
-:author: semuadmin
-:copyright: SEMU Consulting © 2022
-:license: BSD 3-Clause
-"""
-# pylint: disable=invalid-name
-
 from queue import Queue, Empty
 from threading import Event
 from time import sleep
@@ -22,20 +9,20 @@ CONNECTED = 1
 
 if __name__ == "__main__":
     # GNSS receiver serial port parameters - AMEND AS REQUIRED:
-    SERIAL_PORT = "/dev/ttyACM1"
-    BAUDRATE = 38400
+    SERIAL_PORT = "COM3"
+    BAUDRATE = 230400
     TIMEOUT = 10
 
     # NTRIP caster parameters - AMEND AS REQUIRED:
     # Ideally, mountpoint should be <30 km from location.
     IPPROT = "IPv4"  # or "IPv6"
-    NTRIP_SERVER = "myntripcaster.com"
+    NTRIP_SERVER = "rtk2go.com"
     NTRIP_PORT = 2101
     FLOWINFO = 0  # for IPv6
     SCOPEID = 0  # for IPv6
-    MOUNTPOINT = ""  # leave blank to retrieve sourcetable
-    NTRIP_USER = "myuser@mydomain.com"
-    NTRIP_PASSWORD = "mypassword"
+    MOUNTPOINT = "Tw5384"  # leave blank to retrieve sourcetable
+    NTRIP_USER = "avillafranca@gatekeeper-systems.com"
+    NTRIP_PASSWORD = "gsi123"
 
     # NMEA GGA sentence status - AMEND AS REQUIRED:
     GGAMODE = 0  # use fixed reference position (0 = use live position)
@@ -63,7 +50,7 @@ if __name__ == "__main__":
             showhacc=True,
         ) as gna:
             gna.run()
-            sleep(2)  # wait for receiver to output at least 1 navigation solution
+            sleep(2)  # wait for the receiver to output at least 1 navigation solution
 
             mountpoint = ""
             print(
@@ -81,7 +68,7 @@ if __name__ == "__main__":
 
                 try:
                     srt, (mountpoint, dist) = sourcetable_queue.get(timeout=3)
-                    if mountpoint is None:
+                    if dist>0.1 and mountpoint is None:
                         raise Empty
                     print(
                         f"\nClosest mountpoint is {mountpoint} which is {dist} km away\n"
@@ -103,11 +90,18 @@ if __name__ == "__main__":
                     output=send_queue,
                 )
 
-                while (
-                    streaming and not stop_event.is_set()
-                ):  # run until user presses CTRL-C
+                while streaming and not stop_event.is_set():
+                    try:
+                        message = send_queue.get(timeout=1)
+                        if message.startswith(b'\xD3\x00'):
+                            rtcm_type = message[3]  # Modify this index based on the message structure
+                            print(f"Received RTCM Message Type: {rtcm_type}")
+                        else:
+                            # If it's not an RTCM message, you can handle it accordingly
+                            pass
+                    except Empty:
+                        pass
                     sleep(1)
-                sleep(1)
 
     except KeyboardInterrupt:
         stop_event.set()

@@ -1,24 +1,4 @@
-"""
-pygnssutils - gnssstreamer_socket.py
 
-This example illustrates how to use GNSSStreamer in
-conjunction with a single-client TCP socket server as an
-external output handler to stream binary GNSS data to a socket.
-
-gnssdump can serve as a client:
-
-> gnssdump socket=HOSTIP:OUTPORT
-
-Example will terminate on client disconnection.
-
-NB: this is just a simple illustration of how to use output handlers
-with the GNSSStreamer class. The gnssserver CLI utility provides a
-more comprehensive, multi-client socket server capability.
-
-Created on 28 May 2022
-
-@author: semuadmin
-"""
 
 import socket
 

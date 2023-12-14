@@ -1,19 +1,4 @@
-"""
-pygnssutils - rgnssmqttclient_example.py
 
-Illustration of GNSSMQTTClient class.
-
-Reads selected topics from MQTT server and outputs raw data to log file.
-
-Expects user's Client ID to be set up in environment variable MQTTCLIENTID.
-Expects user's *.crt and *.pem files to be placed in user's home directory.
-
-Created on 5 Jun 2023
-
-:author: semuadmin
-:copyright: SEMU Consulting © 2022
-:license: BSD 3-Clause
-"""
 
 from time import sleep
 from threading import Event

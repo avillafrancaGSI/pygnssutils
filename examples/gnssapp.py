@@ -1,31 +1,4 @@
-"""
-pygnssutils - gnssapp.py
 
-*** FOR ILLUSTRATION ONLY - NOT FOR PRODUCTION USE ***
-
-Skeleton GNSS application which continuously receives, parses and prints
-NMEA, UBX or RTCM data from a receiver until the stop Event is set or
-stop() method invoked. Assumes receiver is connected via serial USB or UART1 port.
-
-The app also implements basic methods needed by certain pygnssutils classes.
-
-Optional keyword arguments:
-
-- sendqueue - any data placed on this Queue will be sent to the receiver
-  (e.g. UBX commands/polls or NTRIP RTCM data). Data must be a tuple of 
-  (raw_data, parsed_data).
-- idonly - determines whether the app prints out the entire parsed message,
-  or just the message identity.
-- enableubx - suppresses NMEA receiver output and substitutes a minimum set
-  of UBX messages instead (NAV-PVT, NAV-SAT, NAV-DOP, RXM-RTCM).
-- showhacc - show estimate of horizonal accuracy in metres (if available).
-
-Created on 27 Jul 2023
-
-:author: semuadmin
-:copyright: SEMU Consulting © 2023
-:license: BSD 3-Clause
-"""
 # pylint: disable=invalid-name, too-many-instance-attributes
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser

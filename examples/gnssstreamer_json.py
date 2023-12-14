@@ -1,17 +1,3 @@
-"""
-pygnssutils - gnssstreamer_json.py
-
-This example illustrates how to use GNSSStreamer in
-conjunction with a text File as an external output handler
-to create an array of GNSS messages in JSON format.
-
-The file will be written to the user's HOME directory
-by default, and can be read by any JSON parser.
-
-Created on 28 May 2022
-
-@author: semuadmin
-"""
 
 import os
 
