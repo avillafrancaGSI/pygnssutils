@@ -1,4 +1,31 @@
+"""
+pygnssutils - gnssapp.py
 
+*** FOR ILLUSTRATION ONLY - NOT FOR PRODUCTION USE ***
+
+Skeleton GNSS application which continuously receives, parses and prints
+NMEA, UBX or RTCM data from a receiver until the stop Event is set or
+stop() method invoked. Assumes receiver is connected via serial USB or UART1 port.
+
+The app also implements basic methods needed by certain pygnssutils classes.
+
+Optional keyword arguments:
+
+- sendqueue - any data placed on this Queue will be sent to the receiver
+  (e.g. UBX commands/polls or NTRIP RTCM data). Data must be a tuple of 
+  (raw_data, parsed_data).
+- idonly - determines whether the app prints out the entire parsed message,
+  or just the message identity.
+- enableubx - suppresses NMEA receiver output and substitutes a minimum set
+  of UBX messages instead (NAV-PVT, NAV-SAT, NAV-DOP, RXM-RTCM).
+- showhacc - show estimate of horizonal accuracy in metres (if available).
+
+Created on 27 Jul 2023
+
+:author: semuadmin
+:copyright: SEMU Consulting © 2023
+:license: BSD 3-Clause
+"""
 # pylint: disable=invalid-name, too-many-instance-attributes
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
@@ -45,6 +72,7 @@ class GNSSSkeletonApp:
         self.baudrate = baudrate
         self.timeout = timeout
         self.stopevent = stopevent
+        self.recvqueue = kwargs.get("recvqueue", None)
         self.sendqueue = kwargs.get("sendqueue", None)
         self.idonly = kwargs.get("idonly", True)
         self.enableubx = kwargs.get("enableubx", False)
@@ -88,6 +116,7 @@ class GNSSSkeletonApp:
             args=(
                 self.stream,
                 self.stopevent,
+                self.recvqueue,
                 self.sendqueue,
             ),
             daemon=True,
@@ -104,7 +133,9 @@ class GNSSSkeletonApp:
         if self.stream is not None:
             self.stream.close()
 
-    def _read_loop(self, stream: Serial, stopevent: Event, sendqueue: Queue):
+    def _read_loop(
+        self, stream: Serial, stopevent: Event, recvqueue: Queue, sendqueue: Queue
+    ):
         """
         THREADED
         Reads and parses incoming GNSS data from the receiver,
@@ -112,6 +143,7 @@ class GNSSSkeletonApp:
 
         :param Serial stream: serial stream
         :param Event stopevent: stop event
+        :param Queue recvqueue: queue for messages from receiver
         :param Queue sendqueue: queue for messages to send to receiver
         """
 
@@ -121,25 +153,22 @@ class GNSSSkeletonApp:
         while not stopevent.is_set():
             try:
                 if stream.in_waiting:
-                    _, parsed_data = ubr.read()
+                    raw_data, parsed_data = ubr.read()
                     if parsed_data:
                         # extract current navigation solution
                         self._extract_coordinates(parsed_data)
 
-                        # if it's an RXM-RTCM message, show which RTCM3 message
-                        # it's acknowledging and whether it's been used or not.""
-                        if parsed_data.identity == "RXM-RTCM":
-                            nty = (
-                                f" - {parsed_data.msgType} "
-                                f"{'Used' if parsed_data.msgUsed > 0 else 'Not used'}"
+                        if recvqueue is None:
+                            # print data on stdout
+                            op = (
+                                "GNSS>> " + parsed_data.identity
+                                if self.idonly
+                                else parsed_data
                             )
+                            print(op)
                         else:
-                            nty = ""
-
-                        if self.idonly:
-                            print(f"GNSS>> {parsed_data.identity}{nty}")
-                        else:
-                            print(parsed_data)
+                            # place data on receive queue
+                            recvqueue.put((raw_data, parsed_data))
 
                 # send any queued output data to receiver
                 self._send_data(ubr.datastream, sendqueue)
@@ -192,9 +221,9 @@ class GNSSSkeletonApp:
                 while not sendqueue.empty():
                     data = sendqueue.get(False)
                     raw, parsed = data
-                    source = "NTRIP>>" if isinstance(parsed, RTCMMessage) else "GNSS<<"
+                    source = "NTRIP" if isinstance(parsed, RTCMMessage) else "GNSS"
                     if self.idonly:
-                        print(f"{source} {parsed.identity}")
+                        print(f"{source}<< {parsed.identity}")
                     else:
                         print(parsed)
                     stream.write(raw)
@@ -250,6 +279,7 @@ if __name__ == "__main__":
     )
 
     args = arp.parse_args()
+    recv_queue = Queue()  # set to None to print data to stdout
     send_queue = Queue()
     stop_event = Event()
 
@@ -260,6 +290,7 @@ if __name__ == "__main__":
             int(args.baudrate),
             float(args.timeout),
             stop_event,
+            recvqueue=recv_queue,
             sendqueue=send_queue,
             idonly=False,
             enableubx=True,
