@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # NTRIP caster parameters - AMEND AS REQUIRED:
     # Ideally, mountpoint should be <30 km from location.
     IPPROT = "IPv4"  # or "IPv6"
-    NTRIP_SERVER = "rtk2g0.com"
+    NTRIP_SERVER = "rtk2go.com"
     NTRIP_PORT = 2101
     FLOWINFO = 0  # for IPv6
     SCOPEID = 0  # for IPv6
